@@ -4,47 +4,51 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function formPage()
+    public function create()
     {
-        return view('form');
+        return view('user.form'); // Ensure this view exists
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'password' => 'required|min:8',
-            'gender' => 'required|in:Male,Female',
+            'password' => 'required|string|min:8',
+            'gender' => 'required|string',
             'birthday' => 'required|date',
+            'status' => 'nullable|boolean', // Validate the status as a boolean
         ]);
 
-        User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => bcrypt($validated['password']),
-            'gender' => $validated['gender'],
-            'birthday' => $validated['birthday'],
-            'status_active' => $request->has('status_active'),
-        ]);
+        $user = new User();
+        $user->name = $request->input('name');
+        $user->email = $request->input('email');
+        $user->password = bcrypt($request->input('password'));
+        $user->gender = $request->input('gender');
+        $user->birthday = $request->input('birthday');
+        $user->status = $request->has('status') ? 1 : 0; // If the checkbox is checked, set to 1 (active), else 0 (inactive)
+        $user->save();
 
-        return redirect()->route('form.page')->with('success', 'User added successfully.');
+        return redirect()->route('user.index');
     }
 
-    public function tablePage()
+    public function index()
     {
-        $users = User::where('status_active', true)->get();
-        return view('table', compact('users'));
+        $users = User::where('status', 1)->get();
+        return view('user.table', compact('users'));
     }
 
-    public function delete($id)
+    public function destroy($id)
     {
-        $user = User::findOrFail($id);
-        $user->delete();
-        return redirect()->route('table.page')->with('success', 'User soft deleted.');
+        $user = User::find($id);
+        if ($user) {
+            $user->update(['status' => 0]);
+        }
+
+        return redirect()->route('user.index')->with('success', 'User deleted successfully!');
     }
 }

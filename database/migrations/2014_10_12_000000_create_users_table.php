@@ -20,10 +20,9 @@ class CreateUsersTable extends Migration
             $table->string('password');
             $table->enum('gender', ['Male', 'Female']);
             $table->date('birthday');
-            $table->boolean('status_active')->default(false);
-            $table->softDeletes();
+            $table->boolean('status')->default(1);
             $table->timestamps();
-        });              
+        });
     }
 
     /**
